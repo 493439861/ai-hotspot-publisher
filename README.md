@@ -4,7 +4,7 @@
 
 ## 功能
 
-- **多源热点聚合**: GitHub Trending + Tavily 搜索
+- **多源热点聚合**: GitHub Trending + arXiv + Tavily 搜索（各 2/4/4 条，共 10 条）
 - **内容生成**: MiniMax2.7 生成深度解读文章
 - **配图生成**: 阿里云百炼 wan2.7 生成科技蓝色温暖风格配图（封面 1024x1024 + 文中 1024x1024）
 - **HTML 输出**: UTF-8 编码，可直接复制到微信编辑器
@@ -23,7 +23,7 @@ ai-hotspot-publisher/
 │   ├── __init__.py
 │   ├── main.py              # 主入口
 │   ├── config.py            # 配置管理
-│   ├── hotspot_finder.py    # 热点发现 (GitHub + Tavily)
+│   ├── hotspot_finder.py    # 热点发现 (GitHub + arXiv + Tavily)
 │   ├── content_generator.py # 内容生成 (MiniMax2.7)
 │   ├── image_generator.py   # 配图生成 (阿里云 wan2.7)
 │   ├── html_generator.py    # HTML 生成
@@ -38,8 +38,8 @@ ai-hotspot-publisher/
 
 ## 工作流程
 
-1. **GitHub + Tavily 搜索** → 显示 Top 5 热点候选
-2. **用户选择** → 输入数字 1-5 选择热点
+1. **GitHub + arXiv + Tavily** → 显示 Top 10 热点候选
+2. **用户选择** → 输入数字 1-10 选择热点
 3. **MiniMax2.7 生成文章** → 深度解读
 4. **wan2.7 生成配图** → 封面 1024x1024 + 文中 1024x1024（科技蓝色温暖风格）
 5. **保存 Markdown** → output/{日期+时间}/article.md

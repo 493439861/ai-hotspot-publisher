@@ -1,11 +1,12 @@
 """
-热点发现模块 - GitHub Trending + Tavily 搜索
+热点发现模块 - GitHub Trending + Tavily 搜索 + arXiv
 """
 
 import requests
 from dataclasses import dataclass
 from typing import List
 from datetime import datetime, timedelta
+import xml.etree.ElementTree as ET
 
 
 @dataclass
@@ -27,25 +28,29 @@ class HotspotFinder:
         self.tavily_api_key = config.tavily_api_key
         self.tavily_base_url = "https://api.tavily.com/search"
 
-    def find_hotspots(self, limit: int = 5) -> List[Hotspot]:
+    def find_hotspots(self, limit: int = 10) -> List[Hotspot]:
         """
         搜索 AI 热点 - 多源聚合
 
         Args:
-            limit: 返回数量
+            limit: 返回数量（默认 10）
 
         Returns:
             热点列表
         """
         all_hotspots = []
 
-        # 1. GitHub Trending
+        # 1. GitHub Trending（2条）
         github_hotspots = self._fetch_github_trending(limit=2)
         all_hotspots.extend(github_hotspots)
 
-        # 2. Tavily 搜索作为补充
+        # 2. arXiv 论文（4条）
+        arxiv_hotspots = self._fetch_arxiv(limit=4)
+        all_hotspots.extend(arxiv_hotspots)
+
+        # 3. Tavily 搜索（4条）
         if self.tavily_api_key:
-            tavily_hotspots = self._search_tavily(limit=3)
+            tavily_hotspots = self._search_tavily(limit=4)
             all_hotspots.extend(tavily_hotspots)
 
         # 按 score 排序
@@ -133,6 +138,56 @@ class HotspotFinder:
 
         except Exception as e:
             print(f"Tavily 搜索失败: {e}")
+
+        return hotspots
+
+    def _fetch_arxiv(self, limit: int = 4) -> List[Hotspot]:
+        """获取 arXiv 最新 AI 论文（最近一周）"""
+        hotspots = []
+        try:
+            one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y%m%d")
+            # arXiv API - 搜索 AI 相关论文
+            url = "http://export.arxiv.org/api/query"
+            params = {
+                "search_query": f"(cat:cs.AI OR cat:cs.LG OR cat:cs.CL) AND submittedDate:[{one_week_ago} TO NOW]",
+                "start": 0,
+                "max_results": limit,
+                "sortBy": "submittedDate",
+                "sortOrder": "descending"
+            }
+
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+
+            # 解析 Atom feed
+            root = ET.fromstring(response.content)
+            ns = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
+
+            for entry in root.findall("atom:entry", ns)[:limit]:
+                title = entry.find("atom:title", ns)
+                title_text = title.text.replace("\n", " ").strip() if title is not None else "无标题"
+
+                link = entry.find("atom:id", ns)
+                link_text = link.text if link is not None else ""
+
+                summary = entry.find("atom:summary", ns)
+                snippet = summary.text.replace("\n", " ").strip()[:200] if summary is not None else ""
+
+                published = entry.find("atom:published", ns)
+                date = published.text[:10] if published is not None else ""
+
+                hotspot = Hotspot(
+                    title=title_text,
+                    url=link_text,
+                    snippet=snippet,
+                    source="arXiv",
+                    publish_date=date,
+                    score=0.8
+                )
+                hotspots.append(hotspot)
+
+        except Exception as e:
+            print(f"arXiv 获取失败: {e}")
 
         return hotspots
 
