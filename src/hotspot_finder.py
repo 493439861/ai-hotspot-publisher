@@ -5,7 +5,7 @@
 import requests
 from dataclasses import dataclass
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 @dataclass
@@ -56,10 +56,11 @@ class HotspotFinder:
         """获取 GitHub Trending AI 项目"""
         hotspots = []
         try:
-            # GitHub Trending AI 项目
+            # GitHub Trending AI 项目（最近一周）
             url = "https://api.github.com/search/repositories"
+            one_week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
             params = {
-                "q": "AI OR artificial-intelligence OR machine-learning OR deep-learning",
+                "q": f"AI OR artificial-intelligence OR machine-learning OR deep-learning created:>{one_week_ago}",
                 "sort": "stars",
                 "order": "desc",
                 "per_page": limit
@@ -105,7 +106,7 @@ class HotspotFinder:
                 "query": "AI artificial intelligence",
                 "search_depth": "basic",
                 "max_results": limit,
-                "time_range": "day",
+                "time_range": "week",
                 "include_answer": False,
                 "include_raw_content": False,
             }
